@@ -1,0 +1,17 @@
+{
+  "extends": "expo/tsconfig.base",
+  "compilerOptions": {
+    "strict": true,
+    "paths": {
+      "@/*": [
+        "./*"
+      ]
+    }
+  },
+  "include": [
+    "**/*.ts",
+    "**/*.tsx",
+    ".expo/types/**/*.ts",
+    "expo-env.d.ts"
+, "app/screens/table.jsx", "app/screens/stat.jsx", "app/screens/slideScreen.jsx", "app/screens/register.jsx", "app/screens/profile.jsx", "app/screens/login.jsx", "app/screens/home.jsx", "app/index.jsx", "app/navigation/topnav.jsx", "app/form/paymentlist.jsx", "app/form/payment.jsx", "app/auth/authprovider.jsx", "app/auth/appStack.jsx", "app/services/rootNavigator.jsx", "app/axios/axios.jsx"  ]
+}
