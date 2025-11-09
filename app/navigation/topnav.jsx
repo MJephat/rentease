@@ -131,6 +131,7 @@ export const TopNav = () => {
                   <TextInput
                     key={key}
                     placeholder={key.charAt(0).toUpperCase() + key.slice(1).replace(/([A-Z])/g, ' $1')}
+                    placeholderTextColor={styles.placeholder.color}
                     value={form[key]}
                     onChangeText={(text) => setForm({ ...form, [key]: text })}
                     style={styles.input}
@@ -180,6 +181,11 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: '#ddd',
     paddingHorizontal: 15,
+  },
+  placeholder: {
+   // fontSize: 18,
+    fontWeight: '600',
+    color: '#666',
   },
   leftContent: {
     flex: 1,
