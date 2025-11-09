@@ -1,9 +1,7 @@
 import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, ScrollView } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, ScrollView, Alert } from 'react-native';
 import { useQuery } from '@tanstack/react-query';
 import { axiosInstance } from '../axios/axios';
-import ShimmerPlaceholder from 'react-native-shimmer-placeholder';
-import { LinearGradient } from 'expo-linear-gradient';
 
 const fetchTenants = async () => {
   const res = await axiosInstance.get('/tenant/getAllTenants');
@@ -18,55 +16,69 @@ const fetchPaymentsByTenant = async (tenantId) => {
 export const TenantCards = () => {
   const [selectedTenantId, setSelectedTenantId] = useState(null);
 
-  const { data: tenants = [], isLoading: loadingTenants } = useQuery({
+  const { data: tenants = [], isLoading: loadingTenants, error: tenantError } = useQuery({
     queryKey: ['tenants'],
     queryFn: fetchTenants,
   });
 
-  const { data: payments = [], isLoading: loadingPayments } = useQuery({
+  const {
+    data: payments = [],
+    isLoading: loadingPayments,
+    error: paymentError,
+  } = useQuery({
     queryKey: ['tenantPayments', selectedTenantId],
     queryFn: () => fetchPaymentsByTenant(selectedTenantId),
     enabled: !!selectedTenantId,
   });
 
-  // Shimmer loader (for tenant cards)
-  if (loadingTenants) {
-    return (
-      <View style={styles.container}>
-        {[1, 2, 3, 4].map((i) => (
-          <ShimmerPlaceholder
-            key={i}
-            LinearGradient={LinearGradient}
-            style={styles.shimmerCard}
-          />
-        ))}
-      </View>
-    );
+  // Handle tenant loading or errors
+  if (loadingTenants) return <Text>Loading tenants...</Text>;
+  if (tenantError) {
+    console.error('Tenant fetch error:', tenantError);
+    Alert.alert('Error', 'Failed to load tenants.');
+    return null;
   }
+
+  const getSafeDate = (dateValue) => {
+    try {
+      if (!dateValue) return '-';
+      const d = new Date(dateValue);
+      if (isNaN(d)) return '-';
+      return d.toLocaleDateString('en-KE', { month: 'short', year: 'numeric' });
+    } catch (err) {
+      console.error('Date parse error:', err);
+      return '-';
+    }
+  };
 
   return (
     <ScrollView>
-      {/* Tenant Cards */}
+      {/* Tenant List */}
       {!selectedTenantId && (
         <View style={styles.container}>
-          {tenants.map((tenant) => (
-            <TouchableOpacity
-              key={tenant._id}
-              style={styles.card}
-              onPress={() => setSelectedTenantId(tenant._id)}
-            >
-              <Text style={styles.cardText}>{tenant.name}</Text>
-            </TouchableOpacity>
-          ))}
+          {tenants.length === 0 ? (
+            <Text style={{ padding: 10, color: '#888' }}>No tenants found.</Text>
+          ) : (
+            tenants.map((tenant) => (
+              <TouchableOpacity
+                key={tenant._id}
+                style={styles.card}
+                onPress={() => setSelectedTenantId(tenant._id)}
+              >
+                <Text style={styles.cardText}>{tenant.name || 'Unnamed Tenant'}</Text>
+              </TouchableOpacity>
+            ))
+          )}
         </View>
       )}
 
-      {/* Payment History */}
+      {/* Payment Details */}
       {selectedTenantId && (
         <>
           <View style={styles.headerRow}>
             <Text style={styles.paymentTitle}>
-              Payment History for {tenants.find((t) => t._id === selectedTenantId)?.name}
+              Payment History for{' '}
+              {tenants.find((t) => t._id === selectedTenantId)?.name || 'Tenant'}
             </Text>
             <TouchableOpacity onPress={() => setSelectedTenantId(null)}>
               <Text style={styles.closeBtn}>Close</Text>
@@ -74,45 +86,39 @@ export const TenantCards = () => {
           </View>
 
           {loadingPayments ? (
-            <View style={{ padding: 10 }}>
-              {[1, 2, 3, 4, 5].map((i) => (
-                <ShimmerPlaceholder
-                  key={i}
-                  LinearGradient={LinearGradient}
-                  style={styles.shimmerRow}
-                />
-              ))}
-            </View>
+            <Text>Loading payments...</Text>
+          ) : paymentError ? (
+            <Text style={{ color: 'red' }}>Failed to load payments.</Text>
           ) : (
             <ScrollView horizontal>
               <View style={styles.table}>
+                {/* Header */}
                 <View style={[styles.row, styles.header]}>
-                  {['Month', 'Paid', 'Rent', 'Electricity', 'Water', 'Garbage', 'Balance', 'Note'].map((h, i) => (
-                    <Text key={i} style={[styles.cell, styles.headerText]}>{h}</Text>
-                  ))}
+                  {['Month', 'Paid', 'Rent', 'Electricity', 'Water', 'Garbage', 'Balance', 'Note'].map(
+                    (h, i) => (
+                      <Text key={i} style={[styles.cell, styles.headerText]}>
+                        {h}
+                      </Text>
+                    )
+                  )}
                 </View>
 
+                {/* Rows */}
                 {payments.length > 0 ? (
-                  payments.map((item) => {
-                    const d = new Date(item.month);
-                    const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-                    const formattedDate = `${months[d.getMonth()]} ${d.getFullYear()}`;
-
-                    return (
-                      <View key={item._id} style={styles.row}>
-                        <Text style={styles.cell}>{formattedDate}</Text>
-                        <Text style={styles.cell}>{item.paidAmount}</Text>
-                        <Text style={styles.cell}>{item.rentAmount}</Text>
-                        <Text style={styles.cell}>{item.electricity}</Text>
-                        <Text style={styles.cell}>{item.water}</Text>
-                        <Text style={styles.cell}>{item.garbage}</Text>
-                        <Text style={styles.cell}>{item.balance}</Text>
-                        <Text style={styles.cell}>{item.note || '-'}</Text>
-                      </View>
-                    );
-                  })
+                  payments.map((item) => (
+                    <View key={item._id || Math.random().toString()} style={styles.row}>
+                      <Text style={styles.cell}>{getSafeDate(item.month)}</Text>
+                      <Text style={styles.cell}>{item.paidAmount ?? '-'}</Text>
+                      <Text style={styles.cell}>{item.rentAmount ?? '-'}</Text>
+                      <Text style={styles.cell}>{item.electricity ?? '-'}</Text>
+                      <Text style={styles.cell}>{item.water ?? '-'}</Text>
+                      <Text style={styles.cell}>{item.garbage ?? '-'}</Text>
+                      <Text style={styles.cell}>{item.balance ?? '-'}</Text>
+                      <Text style={styles.cell}>{item.note ?? '-'}</Text>
+                    </View>
+                  ))
                 ) : (
-                  <Text style={{ padding: 10, color: '#888' }}>No payments found for this tenant.</Text>
+                  <Text style={{ padding: 10, color: '#888' }}>No payments available.</Text>
                 )}
               </View>
             </ScrollView>
@@ -138,17 +144,6 @@ const styles = StyleSheet.create({
     elevation: 3,
     minWidth: 160,
     alignItems: 'center',
-  },
-  shimmerCard: {
-    width: 160,
-    height: 80,
-    borderRadius: 10,
-    margin: 5,
-  },
-  shimmerRow: {
-    height: 25,
-    marginVertical: 5,
-    borderRadius: 6,
   },
   cardText: {
     fontSize: 16,
