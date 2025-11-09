@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "rentease",
+    "name": "Rentease",
     "slug": "rentease",
     "version": "1.0.0",
     "orientation": "portrait",
@@ -8,16 +8,30 @@
     "scheme": "rentease",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
+    "splash": {
+      "image": "./assets/images/splash-icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#ffffff"
+    },
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.jmaina.rentease"
     },
     "android": {
       "adaptiveIcon": {
+        "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#E6F4FE"
       },
+      "package": "com.jmaina.rentease",
+      "versionCode": 1,
+      "permissions": [
+        "INTERNET",
+        "ACCESS_NETWORK_STATE",
+        "ACCESS_WIFI_STATE"
+      ],
+      "usesCleartextTraffic": true,
       "edgeToEdgeEnabled": true,
-      "predictiveBackGestureEnabled": false,
-      "package": "com.jmaina.rentease"
+      "predictiveBackGestureEnabled": false
     },
     "web": {
       "output": "static",

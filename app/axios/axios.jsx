@@ -2,7 +2,7 @@ import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export const axiosInstance = axios.create({
-  baseURL: 'http://192.168.100.14:8000/api/v1',
+  baseURL: 'https://mobile-backend-4izv.onrender.com/api/v1',
   headers: {
     'Content-Type': 'application/json',
   },
