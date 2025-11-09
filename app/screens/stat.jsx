@@ -1,26 +1,18 @@
 import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, ScrollView, FlatList } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, ScrollView } from 'react-native';
 import { useQuery } from '@tanstack/react-query';
 import { axiosInstance } from '../axios/axios';
+import ShimmerPlaceholder from 'react-native-shimmer-placeholder';
+import { LinearGradient } from 'expo-linear-gradient';
 
 const fetchTenants = async () => {
-  try{
   const res = await axiosInstance.get('/tenant/getAllTenants');
   return res?.data?.tenants || [];
-}catch(err){
-  console.log('Error fetching tenants:', err);
-  throw err;
-}
 };
 
 const fetchPaymentsByTenant = async (tenantId) => {
-  try {
-    const res = await axiosInstance.get(`/payment/getpaymentByTenantId/${tenantId}`);
-    return res?.data?.payments || [];
-  } catch (err) {
-    console.log('Error fetching payments:', err);
-    throw err;
-  }
+  const res = await axiosInstance.get(`/payment/getpaymentByTenantId/${tenantId}`);
+  return res?.data?.payments || [];
 };
 
 export const TenantCards = () => {
@@ -31,17 +23,30 @@ export const TenantCards = () => {
     queryFn: fetchTenants,
   });
 
-  const {data: payments = [], isLoading: loadingPayments} = useQuery({
+  const { data: payments = [], isLoading: loadingPayments } = useQuery({
     queryKey: ['tenantPayments', selectedTenantId],
     queryFn: () => fetchPaymentsByTenant(selectedTenantId),
-    enabled: !!selectedTenantId, // Only fetch when tenant is selected
+    enabled: !!selectedTenantId,
   });
 
-  if (loadingTenants) return <Text>Loading tenants...</Text>;
+  // Shimmer loader (for tenant cards)
+  if (loadingTenants) {
+    return (
+      <View style={styles.container}>
+        {[1, 2, 3, 4].map((i) => (
+          <ShimmerPlaceholder
+            key={i}
+            LinearGradient={LinearGradient}
+            style={styles.shimmerCard}
+          />
+        ))}
+      </View>
+    );
+  }
 
   return (
     <ScrollView>
-      {/* ✅ Tenant Cards */}
+      {/* Tenant Cards */}
       {!selectedTenantId && (
         <View style={styles.container}>
           {tenants.map((tenant) => (
@@ -56,18 +61,28 @@ export const TenantCards = () => {
         </View>
       )}
 
-      {/* ✅ Payment Table */}
+      {/* Payment History */}
       {selectedTenantId && (
         <>
           <View style={styles.headerRow}>
-            <Text style={styles.paymentTitle}>Payment History for {tenants.find((t) => t._id === selectedTenantId)?.name}</Text>
+            <Text style={styles.paymentTitle}>
+              Payment History for {tenants.find((t) => t._id === selectedTenantId)?.name}
+            </Text>
             <TouchableOpacity onPress={() => setSelectedTenantId(null)}>
               <Text style={styles.closeBtn}>Close</Text>
             </TouchableOpacity>
           </View>
 
           {loadingPayments ? (
-            <Text>Loading payments...</Text>
+            <View style={{ padding: 10 }}>
+              {[1, 2, 3, 4, 5].map((i) => (
+                <ShimmerPlaceholder
+                  key={i}
+                  LinearGradient={LinearGradient}
+                  style={styles.shimmerRow}
+                />
+              ))}
+            </View>
           ) : (
             <ScrollView horizontal>
               <View style={styles.table}>
@@ -77,24 +92,28 @@ export const TenantCards = () => {
                   ))}
                 </View>
 
-                <FlatList
-                  data={payments}
-                  keyExtractor={(item) => item._id}
-                  renderItem={({ item }) => (
-                    <View style={styles.row}>
-                      <Text style={styles.cell}>
-                        {new Date(item.month).toLocaleDateString('en-KE', { month: 'short', year: 'numeric' })}
-                      </Text>
-                      <Text style={styles.cell}>{item.paidAmount}</Text>
-                      <Text style={styles.cell}>{item.rentAmount}</Text>
-                      <Text style={styles.cell}>{item.electricity}</Text>
-                      <Text style={styles.cell}>{item.water}</Text>
-                      <Text style={styles.cell}>{item.garbage}</Text>
-                      <Text style={styles.cell}>{item.balance}</Text>
-                      <Text style={styles.cell}>{item.note}</Text>
-                    </View>
-                  )}
-                />
+                {payments.length > 0 ? (
+                  payments.map((item) => {
+                    const d = new Date(item.month);
+                    const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+                    const formattedDate = `${months[d.getMonth()]} ${d.getFullYear()}`;
+
+                    return (
+                      <View key={item._id} style={styles.row}>
+                        <Text style={styles.cell}>{formattedDate}</Text>
+                        <Text style={styles.cell}>{item.paidAmount}</Text>
+                        <Text style={styles.cell}>{item.rentAmount}</Text>
+                        <Text style={styles.cell}>{item.electricity}</Text>
+                        <Text style={styles.cell}>{item.water}</Text>
+                        <Text style={styles.cell}>{item.garbage}</Text>
+                        <Text style={styles.cell}>{item.balance}</Text>
+                        <Text style={styles.cell}>{item.note || '-'}</Text>
+                      </View>
+                    );
+                  })
+                ) : (
+                  <Text style={{ padding: 10, color: '#888' }}>No payments found for this tenant.</Text>
+                )}
               </View>
             </ScrollView>
           )}
@@ -103,7 +122,6 @@ export const TenantCards = () => {
     </ScrollView>
   );
 };
-
 
 const styles = StyleSheet.create({
   container: {
@@ -120,6 +138,17 @@ const styles = StyleSheet.create({
     elevation: 3,
     minWidth: 160,
     alignItems: 'center',
+  },
+  shimmerCard: {
+    width: 160,
+    height: 80,
+    borderRadius: 10,
+    margin: 5,
+  },
+  shimmerRow: {
+    height: 25,
+    marginVertical: 5,
+    borderRadius: 6,
   },
   cardText: {
     fontSize: 16,
