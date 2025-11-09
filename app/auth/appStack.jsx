@@ -5,7 +5,7 @@ import {  TopNav } from '../navigation/topnav';
 import { Ionicons } from '@expo/vector-icons';
 import { Profile } from '../screens/profile';
 import { Table } from '../screens/table';
-import { TenantCards } from '../screens/stat';
+import { Stats } from '../screens/stat';
 import { PaymentList } from '../form/paymentlist';
 
 
@@ -44,7 +44,7 @@ export const AppStack = () => {
         <Stack.Screen name="Home" component={Home} />
         <Stack.Screen name="Table" component={Table} />
         <Stack.Screen name="Payment" component={PaymentList} />
-        <Stack.Screen name="Stats" component={TenantCards} />
+        <Stack.Screen name="Stats" component={Stats} />
         <Stack.Screen name="Profile" component={Profile} />
       </Stack.Navigator>
     </>
