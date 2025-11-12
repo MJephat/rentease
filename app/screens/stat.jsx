@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, ScrollView, FlatList, ActivityIndicator } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, ScrollView, FlatList, ActivityIndicator, Alert } from 'react-native';
 import { useQuery } from '@tanstack/react-query';
 import { axiosInstance } from '../axios/axios';
 
@@ -7,10 +7,10 @@ const fetchTenants = async () => {
   try {
     console.log('📋 Fetching tenants...');
     const res = await axiosInstance.get('/tenant/getAllTenants');
-    console.log('✅ Tenants fetched:', res?.data?.tenants?.length);
+    Alert.alert('✅ Tenants fetched:', res?.data?.tenants?.length || 0);
     return res?.data?.tenants || [];
   } catch (error) {
-    console.error('❌ Error fetching tenants:', error);
+    Alert.alert('❌ Error fetching tenants:', error);
     throw error;
   }
 };
@@ -36,28 +36,29 @@ export const Stats = () => {
     queryFn: fetchTenants,
   });
 
-  const {data: payments = [],isLoading: loadingPayments,error: paymentsError} = useQuery({
+  const {data: payments = [], isLoading: loadingPayments, error: paymentsError} = useQuery({
     queryKey: ['tenantPayments', selectedTenantId],
     queryFn: () => fetchPaymentsByTenant(selectedTenantId),
     enabled: !!selectedTenantId,
   });
 
   // Loading state
-  if (loadingTenants) {
+  if (loadingTenants || loadingPayments) {
     return (
       <View style={styles.centerContainer}>
         <ActivityIndicator size="large" color="#007AFF" />
-        <Text style={styles.loadingText}>Loading tenants...</Text>
+        <Text style={styles.loadingText}>Loading ...</Text>
+        <Text style={styles.loadingDetail}>Please wait while we fetch the data.</Text>
       </View>
     );
   }
 
   // Error state
-  if (tenantsError) {
+  if (tenantsError || paymentsError) {
     return (
       <View style={styles.centerContainer}>
-        <Text style={styles.errorText}>❌ Error loading tenants</Text>
-        <Text style={styles.errorDetail}>{tenantsError.message}</Text>
+        <Text style={styles.errorText}>❌ Error loading Occured</Text>
+        <Text style={styles.errorDetail}>{tenantsError?.message || paymentsError?.message}</Text>
       </View>
     );
   }
@@ -66,7 +67,7 @@ export const Stats = () => {
   if (!tenants || tenants.length === 0) {
     return (
       <View style={styles.centerContainer}>
-        <Text style={styles.emptyText}>No tenants found</Text>
+        <Text>No tenants found</Text>
       </View>
     );
   }
@@ -77,7 +78,7 @@ export const Stats = () => {
       {!selectedTenantId && (
         <FlatList
           data={tenants}
-          keyExtractor={(item) => item._id?.toString() || Math.random().toString()}
+          keyExtractor={(item, index) => item?._id ? item._id.toString() : index.toString()}
           numColumns={2}
           contentContainerStyle={styles.container}
           renderItem={({ item }) => (
@@ -142,10 +143,10 @@ export const Stats = () => {
                   return (
                     <View key={item._id || index} style={styles.row}>
                       <Text style={styles.cell}>
-                        {item.month
+                        {item?.month
                           ? new Date(item.month).toLocaleDateString('en-KE', {
                               month: 'short',
-                            year: 'numeric' 
+                            year: 'numeric'
                           })
                         : 'N/A'
                       }
