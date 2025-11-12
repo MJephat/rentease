@@ -1,23 +1,22 @@
 import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, ScrollView, FlatList } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, ScrollView, FlatList, ActivityIndicator, Alert } from 'react-native';
 import { useQuery } from '@tanstack/react-query';
 import { axiosInstance } from '../axios/axios';
-import log from "../logger";
 
 const fetchTenants = async () => {
   try {
-    log.info('📋 Fetching tenants...');
+    console.log('📋 Fetching tenants...');
     const res = await axiosInstance.get('/tenant/getAllTenants');
-    log.info('✅ Tenants fetched:', res?.data?.tenants?.length || 0);
+    Alert.alert('✅ Tenants fetched:', res?.data?.tenants?.length || 0);
     return res?.data?.tenants || [];
   } catch (error) {
-    log.info('❌ Error fetching tenants:', error);
+    Alert.alert('❌ Error fetching tenants:', error);
     throw error;
   }
 };
 
 const fetchPaymentsByTenant = async (tenantId) => {
-  if (!tenantId) return [];
+  if(!tenantId) return [];
   try {
     console.log('💰 Fetching payments for tenant:', tenantId);
     const res = await axiosInstance.get(`/payment/getpaymentByTenantId/${tenantId}`);
@@ -29,152 +28,260 @@ const fetchPaymentsByTenant = async (tenantId) => {
   }
 };
 
-export const TenantCards = () => {
+export const Stats = () => {
   const [selectedTenantId, setSelectedTenantId] = useState(null);
 
-  const { data: tenants, isLoading: loadingTenants } = useQuery({
+  const { data: tenants = [], isLoading: loadingTenants, error: tenantsError } = useQuery({
     queryKey: ['tenants'],
     queryFn: fetchTenants,
   });
 
-  const {
-    data: payments,
-    isLoading: loadingPayments,
-  } = useQuery({
+  const {data: payments = [], isLoading: loadingPayments, error: paymentsError} = useQuery({
     queryKey: ['tenantPayments', selectedTenantId],
     queryFn: () => fetchPaymentsByTenant(selectedTenantId),
-    enabled: !!selectedTenantId, // Only fetch when tenant is selected
+    enabled: !!selectedTenantId,
   });
 
-  if (loadingTenants) return <Text>Loading tenants...</Text>;
+  // Loading state
+  if (loadingTenants || loadingPayments) {
+    return (
+      <View style={styles.centerContainer}>
+        <ActivityIndicator size="large" color="#007AFF" />
+        <Text style={styles.loadingText}>Loading ...</Text>
+        <Text style={styles.loadingDetail}>Please wait while we fetch the data.</Text>
+      </View>
+    );
+  }
+
+  // Error state
+  if (tenantsError || paymentsError) {
+    return (
+      <View style={styles.centerContainer}>
+        <Text style={styles.errorText}>❌ Error loading Occured</Text>
+        <Text style={styles.errorDetail}>{tenantsError?.message || paymentsError?.message}</Text>
+      </View>
+    );
+  }
+
+  // Empty state
+  if (!tenants || tenants.length === 0) {
+    return (
+      <View style={styles.centerContainer}>
+        <Text>No tenants found</Text>
+      </View>
+    );
+  }
 
   return (
-    <ScrollView>
-      {/* ✅ Tenant Cards */}
+    <View style={styles.mainContainer}>
+      {/* ✅ Tenant Cards - Using FlatList instead of ScrollView + map */}
       {!selectedTenantId && (
-        <View style={styles.container}>
-          {tenants.map((tenant) => (
+        <FlatList
+          data={tenants}
+          keyExtractor={(item, index) => item?._id ? item._id.toString() : index.toString()}
+          numColumns={2}
+          contentContainerStyle={styles.container}
+          renderItem={({ item }) => (
             <TouchableOpacity
-              key={tenant._id}
               style={styles.card}
-              onPress={() => setSelectedTenantId(tenant._id)}
+              onPress={() => {
+                console.log('📌 Selected tenant:', item._id);
+                setSelectedTenantId(item._id);
+              }}
             >
-              <Text style={styles.cardText}>{tenant.name}</Text>
+              <Text style={styles.cardText}>{item.name || 'Unknown'}</Text>
+              <Text style={styles.cardSubtext}>Tap to view payments</Text>
             </TouchableOpacity>
-          ))}
-        </View>
+          )}
+        />
       )}
 
       {/* ✅ Payment Table */}
       {selectedTenantId && (
-        <>
+        <View style={styles.paymentContainer}>
           <View style={styles.headerRow}>
-            <Text style={styles.paymentTitle}>Payment History for {tenants.find((t) => t._id === selectedTenantId)?.name}</Text>
-            <TouchableOpacity onPress={() => setSelectedTenantId(null)}>
-              <Text style={styles.closeBtn}>Close</Text>
+            <Text style={styles.paymentTitle}>
+              Payment History for {tenants.find((t) => t._id === selectedTenantId)?.name || 'Tenant'}
+            </Text>
+            <TouchableOpacity 
+              onPress={() => {
+                console.log('🔙 Closing payment view');
+                setSelectedTenantId(null);
+              }}
+              style={styles.closeButton}
+            >
+              <Text style={styles.closeBtn}>✕ Close</Text>
             </TouchableOpacity>
           </View>
 
           {loadingPayments ? (
-            <Text>Loading payments...</Text>
+            <View style={styles.centerContainer}>
+              <ActivityIndicator size="large" color="#007AFF" />
+              <Text style={styles.loadingText}>Loading payments...</Text>
+            </View>
+          ) : paymentsError ? (
+            <View style={styles.centerContainer}>
+              <Text style={styles.errorText}>❌ Error loading payments</Text>
+            </View>
+          ) : payments.length === 0 ? (
+            <View style={styles.centerContainer}>
+              <Text style={styles.emptyText}>No payment history</Text>
+            </View>
           ) : (
-            <ScrollView horizontal>
+            <ScrollView horizontal showsHorizontalScrollIndicator={true}>
               <View style={styles.table}>
+                {/* Header Row */}
                 <View style={[styles.row, styles.header]}>
                   {['Month', 'Paid', 'Rent', 'Electricity', 'Water', 'Garbage', 'Balance', 'Note'].map((h, i) => (
                     <Text key={i} style={[styles.cell, styles.headerText]}>{h}</Text>
                   ))}
                 </View>
 
-                <FlatList
-                  data={payments}
-                  keyExtractor={(item) => item._id}
-                  renderItem={({ item }) => (
-                    <View style={styles.row}>
+                {/* Data Rows */}
+                {Array.isArray(payments) && payments.map((item, index) => {
+                  if (!item) return null;
+                  return (
+                    <View key={item._id || index} style={styles.row}>
                       <Text style={styles.cell}>
-                        {new Date(item.month).toLocaleDateString('en-KE', { month: 'short', year: 'numeric' })}
-                      </Text>
-                      <Text style={styles.cell}>{item.paidAmount}</Text>
-                      <Text style={styles.cell}>{item.rentAmount}</Text>
-                      <Text style={styles.cell}>{item.electricity}</Text>
-                      <Text style={styles.cell}>{item.water}</Text>
-                      <Text style={styles.cell}>{item.garbage}</Text>
-                      <Text style={styles.cell}>{item.balance}</Text>
-                      <Text style={styles.cell}>{item.note}</Text>
-                    </View>
-                  )}
-                />
+                        {item?.month
+                          ? new Date(item.month).toLocaleDateString('en-KE', {
+                              month: 'short',
+                            year: 'numeric'
+                          })
+                        : 'N/A'
+                      }
+                    </Text>
+                    <Text style={styles.cell}>{item.paidAmount ?? 0}</Text>
+                    <Text style={styles.cell}>{item.rentAmount ?? 0}</Text>
+                    <Text style={styles.cell}>{item.electricity ?? 0}</Text>
+                    <Text style={styles.cell}>{item.water ?? 0}</Text>
+                    <Text style={styles.cell}>{item.garbage ?? 0}</Text>
+                    <Text style={styles.cell}>{item.balance ?? 0}</Text>
+                    <Text style={styles.cell}>{item.note || '-'}</Text>
+                  </View>
+                )})}
               </View>
             </ScrollView>
           )}
-        </>
+        </View>
       )}
-    </ScrollView>
+    </View>
   );
 };
 
-
 const styles = StyleSheet.create({
-  container: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    padding: 10,
+  mainContainer: {
+    flex: 1,
+    backgroundColor: '#fff',
+  },
+  centerContainer: {
+    flex: 1,
     justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  container: {
+    padding: 10,
   },
   card: {
-    backgroundColor: '#cfccccff',
+    backgroundColor: '#f2f2f2',
     padding: 20,
     margin: 5,
     borderRadius: 10,
     elevation: 3,
-    minWidth: 160,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    flex: 1,
+    minWidth: 150,
+    maxWidth: '48%',
     alignItems: 'center',
   },
   cardText: {
     fontSize: 16,
     fontWeight: 'bold',
-    color: 'black',
+    color: '#2e2c2cff',
+    textAlign: 'center',
+  },
+  cardSubtext: {
+    fontSize: 12,
+    color: '#666',
+    marginTop: 5,
+  },
+  paymentContainer: {
+    flex: 1,
   },
   headerRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    margin: 10,
+    padding: 10,
     alignItems: 'center',
+    backgroundColor: '#f8f8f8',
+    borderBottomWidth: 1,
+    borderBottomColor: '#ddd',
   },
   paymentTitle: {
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: 'bold',
+    flex: 1,
+    color: '#333',
+  },
+  closeButton: {
+    padding: 8,
+    backgroundColor: '#ff3b30',
+    borderRadius: 5,
   },
   closeBtn: {
-    color: 'red',
+    color: '#fff',
     fontWeight: 'bold',
-    padding: 6,
-    backgroundColor: '#e9e3e3ff',
-    borderRadius: 5,
-    
+    fontSize: 14,
   },
   table: {
     borderWidth: 1,
     borderColor: '#ccc',
     minWidth: 800,
-    marginHorizontal: 10,
+    margin: 10,
+    backgroundColor: '#fff',
   },
   header: {
-    backgroundColor: '#f2f2f2',
+    backgroundColor: '#e8e8e8',
   },
   row: {
     flexDirection: 'row',
     borderBottomWidth: 1,
-    borderColor: '#ccc',
+    borderBottomColor: '#ddd',
   },
   cell: {
     flex: 1,
-    padding: 8,
+    padding: 10,
     fontSize: 12,
     color: '#333',
-    width: 100,
+    minWidth: 100,
+    textAlign: 'center',
   },
   headerText: {
     fontWeight: 'bold',
+    fontSize: 13,
+  },
+  loadingText: {
+    marginTop: 10,
+    fontSize: 14,
+    color: '#666',
+  },
+  errorText: {
+    fontSize: 16,
+    color: '#ff3b30',
+    fontWeight: 'bold',
+    marginBottom: 5,
+  },
+  errorDetail: {
+    fontSize: 14,
+    color: '#666',
+    textAlign: 'center',
+  },
+  emptyText: {
+    fontSize: 16,
+    color: '#999',
   },
 });
