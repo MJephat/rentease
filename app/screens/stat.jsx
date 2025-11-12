@@ -2,17 +2,32 @@ import React, { useState } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, ScrollView, FlatList } from 'react-native';
 import { useQuery } from '@tanstack/react-query';
 import { axiosInstance } from '../axios/axios';
+import log from "../logger";
 
 const fetchTenants = async () => {
-  const res = await axiosInstance.get('/tenant/getAllTenants');
-  return res?.data?.tenants || [];
+  try {
+    log.info('📋 Fetching tenants...');
+    const res = await axiosInstance.get('/tenant/getAllTenants');
+    log.info('✅ Tenants fetched:', res?.data?.tenants?.length || 0);
+    return res?.data?.tenants || [];
+  } catch (error) {
+    log.info('❌ Error fetching tenants:', error);
+    throw error;
+  }
 };
 
 const fetchPaymentsByTenant = async (tenantId) => {
-  const res = await axiosInstance.get(`/payment/getpaymentByTenantId/${tenantId}`);
-  return res?.data?.payments || [];
+  if(!tenantId) return [];
+  try {
+    log.info('💰 Fetching payments for tenant:', tenantId);
+    const res = await axiosInstance.get(`/payment/getpaymentByTenantId/${tenantId}`);
+    log.info('✅ Payments fetched:', res?.data?.payments?.length);
+    return res?.data?.payments || [];
+  } catch (error) {
+    log.error('❌ Error fetching payments:', error);
+    throw error;
+  }
 };
-
 export const TenantCards = () => {
   const [selectedTenantId, setSelectedTenantId] = useState(null);
 
