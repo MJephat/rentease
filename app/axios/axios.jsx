@@ -3,6 +3,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export const axiosInstance = axios.create({
   baseURL: 'https://mobile-backend-4izv.onrender.com/api/v1',
+  timeout: 10000,
   headers: {
     'Content-Type': 'application/json',
   },

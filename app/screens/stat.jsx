@@ -16,6 +16,7 @@ const fetchTenants = async () => {
 };
 
 const fetchPaymentsByTenant = async (tenantId) => {
+  if(!tenantId) return [];
   try {
     console.log('💰 Fetching payments for tenant:', tenantId);
     const res = await axiosInstance.get(`/payment/getpaymentByTenantId/${tenantId}`);
@@ -30,20 +31,12 @@ const fetchPaymentsByTenant = async (tenantId) => {
 export const Stats = () => {
   const [selectedTenantId, setSelectedTenantId] = useState(null);
 
-  const { 
-    data: tenants = [], 
-    isLoading: loadingTenants,
-    error: tenantsError 
-  } = useQuery({
+  const { data: tenants = [], isLoading: loadingTenants, error: tenantsError } = useQuery({
     queryKey: ['tenants'],
     queryFn: fetchTenants,
   });
 
-  const {
-    data: payments = [],
-    isLoading: loadingPayments,
-    error: paymentsError,
-  } = useQuery({
+  const {data: payments = [],isLoading: loadingPayments,error: paymentsError} = useQuery({
     queryKey: ['tenantPayments', selectedTenantId],
     queryFn: () => fetchPaymentsByTenant(selectedTenantId),
     enabled: !!selectedTenantId,
@@ -144,12 +137,14 @@ export const Stats = () => {
                 </View>
 
                 {/* Data Rows */}
-                {payments.map((item, index) => (
-                  <View key={item._id || index} style={styles.row}>
-                    <Text style={styles.cell}>
-                      {item.month 
-                        ? new Date(item.month).toLocaleDateString('en-KE', { 
-                            month: 'short', 
+                {Array.isArray(payments) && payments.map((item, index) => {
+                  if (!item) return null;
+                  return (
+                    <View key={item._id || index} style={styles.row}>
+                      <Text style={styles.cell}>
+                        {item.month
+                          ? new Date(item.month).toLocaleDateString('en-KE', {
+                              month: 'short',
                             year: 'numeric' 
                           })
                         : 'N/A'
@@ -163,7 +158,7 @@ export const Stats = () => {
                     <Text style={styles.cell}>{item.balance ?? 0}</Text>
                     <Text style={styles.cell}>{item.note || '-'}</Text>
                   </View>
-                ))}
+                )})}
               </View>
             </ScrollView>
           )}
