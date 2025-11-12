@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, ScrollView, FlatList } from 'react-native';
 import { useQuery } from '@tanstack/react-query';
-import { axiosInstance } from '../axios/api';
+import { axiosInstance } from '../axios/axios';
 
 const fetchTenants = async () => {
   const res = await axiosInstance.get('/tenant/getAllTenants');
