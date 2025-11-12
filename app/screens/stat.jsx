@@ -17,17 +17,18 @@ const fetchTenants = async () => {
 };
 
 const fetchPaymentsByTenant = async (tenantId) => {
-  if(!tenantId) return [];
+  if (!tenantId) return [];
   try {
-    log.info('💰 Fetching payments for tenant:', tenantId);
+    console.log('💰 Fetching payments for tenant:', tenantId);
     const res = await axiosInstance.get(`/payment/getpaymentByTenantId/${tenantId}`);
-    log.info('✅ Payments fetched:', res?.data?.payments?.length);
+    console.log('✅ Payments fetched:', res?.data?.payments?.length);
     return res?.data?.payments || [];
   } catch (error) {
-    log.error('❌ Error fetching payments:', error);
+    console.error('❌ Error fetching payments:', error);
     throw error;
   }
 };
+
 export const TenantCards = () => {
   const [selectedTenantId, setSelectedTenantId] = useState(null);
 
