@@ -15,13 +15,13 @@
     },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.jmaina.rentease"
+      "bundleIdentifier": "com.mmukundi.rentease"
     },
     "android": {
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE"
       },
-      "package": "com.jmaina.rentease",
+      "package": "com.mmukundi.rentease",
       "versionCode": 1,
       "permissions": [
         "INTERNET",
@@ -58,9 +58,9 @@
     "extra": {
       "router": {},
       "eas": {
-        "projectId": "1c85c4d6-a388-4aa8-9538-728ef114d1a7"
+        "projectId": "4cfe23a5-ca31-40da-b356-b2207c9f32e3"
       }
     },
-    "owner": "jmaina"
+    "owner": "mmukundi"
   }
 }
