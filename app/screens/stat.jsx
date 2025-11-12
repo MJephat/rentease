@@ -133,6 +133,7 @@ const styles = StyleSheet.create({
   cardText: {
     fontSize: 16,
     fontWeight: 'bold',
+    color: 'black',
   },
   headerRow: {
     flexDirection: 'row',
@@ -150,6 +151,7 @@ const styles = StyleSheet.create({
     padding: 6,
     backgroundColor: '#e9e3e3ff',
     borderRadius: 5,
+    
   },
   table: {
     borderWidth: 1,
