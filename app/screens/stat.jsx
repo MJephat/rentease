@@ -7,7 +7,7 @@ const fetchTenants = async () => {
   try {
     console.log('📋 Fetching tenants...');
     const res = await axiosInstance.get('/tenant/getAllTenants');
-    Alert.alert('✅ Tenants fetched:', res?.data?.tenants?.length || 0);
+    Alert.alert('Tenants fetched', `Count: ${res?.data?.tenants?.length || 0}`);
     return res?.data?.tenants || [];
   } catch (error) {
     Alert.alert('❌ Error fetching tenants:', error);
@@ -18,6 +18,8 @@ const fetchTenants = async () => {
 const fetchPaymentsByTenant = async (tenantId) => {
   if(!tenantId) return [];
   try {
+    const token = await AsyncStorage.getItem('token');
+    console.log('🪪 Token found:', !!token);
     console.log('💰 Fetching payments for tenant:', tenantId);
     const res = await axiosInstance.get(`/payment/getpaymentByTenantId/${tenantId}`);
     console.log('✅ Payments fetched:', res?.data?.payments?.length);
@@ -138,28 +140,28 @@ export const Stats = () => {
                 </View>
 
                 {/* Data Rows */}
-                {Array.isArray(payments) && payments.map((item, index) => {
-                  if (!item) return null;
-                  return (
-                    <View key={item._id || index} style={styles.row}>
-                      <Text style={styles.cell}>
-                        {item?.month
-                          ? new Date(item.month).toLocaleDateString('en-KE', {
-                              month: 'short',
-                            year: 'numeric'
-                          })
-                        : 'N/A'
-                      }
-                    </Text>
-                    <Text style={styles.cell}>{item.paidAmount ?? 0}</Text>
-                    <Text style={styles.cell}>{item.rentAmount ?? 0}</Text>
-                    <Text style={styles.cell}>{item.electricity ?? 0}</Text>
-                    <Text style={styles.cell}>{item.water ?? 0}</Text>
-                    <Text style={styles.cell}>{item.garbage ?? 0}</Text>
-                    <Text style={styles.cell}>{item.balance ?? 0}</Text>
-                    <Text style={styles.cell}>{item.note || '-'}</Text>
-                  </View>
-                )})}
+          {Array.isArray(payments) && payments.map((item, index) => {
+              if (!item) return null;
+              return (
+                <View key={item._id || index} style={styles.row}>
+                  <Text style={styles.cell}>
+                    {item?.month
+                      ? new Date(item.month).toLocaleDateString('en-KE', {
+                          month: 'short',
+                          year: 'numeric'
+                        })
+                      : 'N/A'}
+                  </Text>
+                  <Text style={styles.cell}>{item.paidAmount ?? 0}</Text>
+                  <Text style={styles.cell}>{item.rentAmount ?? 0}</Text>
+                  <Text style={styles.cell}>{item.electricity ?? 0}</Text>
+                  <Text style={styles.cell}>{item.water ?? 0}</Text>
+                  <Text style={styles.cell}>{item.garbage ?? 0}</Text>
+                  <Text style={styles.cell}>{item.balance ?? 0}</Text>
+                  <Text style={styles.cell}>{item.note || '-'}</Text>
+                </View>
+              );
+            })}
               </View>
             </ScrollView>
           )}
