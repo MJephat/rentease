@@ -30,7 +30,7 @@ const fetchPaymentsByTenant = async (tenantId) => {
   }
 };
 
-export const Stats = () => {
+export default function Stats() {
   const [selectedTenantId, setSelectedTenantId] = useState(null);
 
   const { data: tenants = [], isLoading: loadingTenants, error: tenantsError } = useQuery({
