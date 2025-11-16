@@ -30,7 +30,7 @@ const fetchPaymentsByTenant = async (tenantId) => {
   }
 };
 
-const Stats = () => {
+export default function Stats(){
   const [selectedTenantId, setSelectedTenantId] = useState(null);
 
   const { data: tenants = [], isLoading: loadingTenants, error: tenantsError } = useQuery({
@@ -171,7 +171,6 @@ const Stats = () => {
   );
 };
 
-export default Stats;
 
 const styles = StyleSheet.create({
   mainContainer: {

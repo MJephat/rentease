@@ -5,7 +5,7 @@ import {  TopNav } from '../navigation/topnav';
 import { Ionicons } from '@expo/vector-icons';
 import { Profile } from '../screens/profile';
 import { Table } from '../screens/table';
-import { Stats } from '../screens/stat';
+import  Stats  from '../screens/stat';
 import { PaymentList } from '../form/paymentlist';
 
 
